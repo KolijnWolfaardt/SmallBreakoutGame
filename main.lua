@@ -2,6 +2,7 @@
 HC = require 'hc'
 
 brickImages= {}
+brickParticles = {}
 brickFilenames = {"tileBlack_27.png","tileBlue_27.png","tileGreen_27.png","tileGrey_27.png","tileOrange_26.png","tilePink_27.png","tileRed_27.png","tileYellow_27.png"}
 numberOfBrickTypes = 8
 
@@ -46,11 +47,14 @@ function love.load()
     -- Load all the images
     for i=1,numberOfBrickTypes do
         brickImages[i] = love.graphics.newImage("images/" .. brickFilenames[i])
+        brickParticles[i] = createParticleSystem(brickImages[i])
     end
 
     bat.image = love.graphics.newImage("images/paddle_02.png")
     ball.image = love.graphics.newImage("images/ballYellow_05.png")
     coinImage = love.graphics.newImage("images/coin_16.png")
+
+    particleImage = love.graphics.newImage("images/particleWhite_1.png")
 
     bat.bounceSound = love.audio.newSource("sounds/tone1.ogg","static")
 
@@ -68,18 +72,36 @@ function love.load()
             listOfBrickObjects[i][j].isBrick = true
             listOfBrickObjects[i][j].i = i
             listOfBrickObjects[i][j].j = j
+            listOfBrickObjects[i][j].imageCode = listOfBricks[i][j]
         end
     end
 
     love.graphics.setBackgroundColor(10,10,10)
 
     -- Set up the collision mechanics
-    bat.object = HC.rectangle(200,200,200,38)
+    bat.object = HC.rectangle(200,200,bat.image:getWidth()*brickScale,bat.image:getHeight()*brickScale)
     bat.object:moveTo(love.mouse.getX(),bat.y)
 
     ball.object = HC.circle(ball.x,ball.y,ball.radius)
+
 end
 
+function createParticleSystem(image)
+
+    partSystem = love.graphics.newParticleSystem(image,60)
+    partSystem:setParticleLifetime(0.2, 1.0)
+    partSystem:setSizeVariation(0)
+    partSystem:setSizes(0.1,0.05,0.02,0.01)
+    partSystem:setSpinVariation(0.8)
+    partSystem:setRotation(0,10,20)
+    partSystem:setAreaSpread("normal",10,10)
+    --partSystem:setRadialAcceleration(500,800)
+    partSystem:setOffset(111,111)
+
+    partSystem:setLinearAcceleration(-200, -200, 200, 200)
+
+    return partSystem
+end
 
 function getPattern(x,y,number)
     if number == 1 then
@@ -166,17 +188,23 @@ function love.update(dt)
     --for shape, delta in pairs(HC.collisions(ballCircle)) do
         if ((delta.x^2 + delta.y^2) > 0.1) then
             if (shape.isBrick == true) then
+
                 i = shape.i
                 j = shape.j
-                listOfBricks[i][j] = 0
-                listOfBrickObjects[i][j] = nil
-                HC.remove(shape)
 
                 --bounce the ball
                 if (ball.stepsSinceBounce == 0) then
                    bounceBall(delta,false)
+
+                   pSystem  = brickParticles[listOfBricks[i][j]]
+                   pSystem:setPosition(sideOffsets+(i-0.5)*brickInc,sideOffsets+(j-0.5)*brickInc)
+                   pSystem:emit(20)
                    --ball.stepsSinceBounce = 1
                 end
+
+                listOfBricks[i][j] = 0
+                listOfBrickObjects[i][j] = nil
+                HC.remove(shape)
             end
         end
 
@@ -185,6 +213,10 @@ function love.update(dt)
     while #text > 40 do
         table.remove(text, 1)
     end   
+
+    for i=1,numberOfBrickTypes do
+        brickParticles[i]:update(dt)
+    end
 
 end
 
@@ -235,11 +267,11 @@ function love.draw()
             end
         end
     end
-    love.graphics.setColor(150,255,180)
-    bat.object:draw('fill')
+    --love.graphics.setColor(150,255,180)
+    --bat.object:draw('fill')
 
-    love.graphics.setColor(220,70,60)
-    ball.object :draw('line')
+    --love.graphics.setColor(220,70,60)
+    --ball.object :draw('line')
 
     love.graphics.setColor(255,255,255)
 
@@ -252,6 +284,10 @@ function love.draw()
     for i = 1,#text do
         love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
         love.graphics.print(text[#text - (i-1)], 10, i * 15)
+    end
+
+    for i=1,numberOfBrickTypes do
+        love.graphics.draw(brickParticles[i],0,0)
     end
 end
 
