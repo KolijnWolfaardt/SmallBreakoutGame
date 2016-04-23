@@ -1,4 +1,5 @@
 
+HC = require 'hc'
 
 brickImages= {}
 brickFilenames = {"tileBlack_27.png","tileBlue_27.png","tileGreen_27.png","tileGrey_27.png","tileOrange_26.png","tilePink_27.png","tileRed_27.png","tileYellow_27.png"}
@@ -11,29 +12,36 @@ brickWidth = 108
 bricksInX = 50
 bricksInY = 15
 
-screenWidth = 1920
-screenHeight = 1080
+screenWidth = 1600
+screenHeight = 900
 
 sideOffsets = 40
 
 listOfBricks = {}
 
+
+-- bat related variables
 batX = screenWidth/2
 batY = screenHeight *0.9
 
+
+
+ -- Ball related variables
 ballX = screenWidth/2
 ballY = screenHeight *0.85
 
-ballSpeedX = 5
-ballSpeedY = -5
-
 ballradius = 21
+
+ballSpeedX = 250
+ballSpeedY = -250
+ballSpeed = 400
+
+
 
 function love.load()
     --Set the window
-    love.window.setFullscreen(true)
-    love.window.maximize()
-
+    love.window.setFullscreen(false)
+    love.window.setMode(1600,900)
 
     -- Load all the images
     for i=1,numberOfBrickTypes do
@@ -60,7 +68,13 @@ function love.load()
 
     love.graphics.setBackgroundColor(10,10,10)
 
+    -- Set up the collision mechanics
+    batRectangle = HC.rectangle(200,200,200,40)
+    batRectangle:moveTo(love.mouse.getX(),batY)
+
+    ballCircle = HC.circle(ballX,ballY,ballradius)
 end
+
 
 function getPattern(x,y,number)
     if number == 1 then
@@ -89,8 +103,8 @@ function love.update(dt)
     --Set the paddle position equal to the mouse position
     batX = love.mouse.getX()
 
-    ballX = ballX + ballSpeedX
-    ballY = ballY + ballSpeedY
+    ballX = ballX + ballSpeedX*dt
+    ballY = ballY + ballSpeedY*dt
 
     if (ballX+ballradius > screenWidth) then
         ballSpeedX = - ballSpeedX
@@ -105,16 +119,23 @@ function love.update(dt)
         ballSpeedY = - ballSpeedY
     end
 
+    -- Update the physics objects
+    batRectangle:moveTo(love.mouse.getX(),batY)
+    ballCircle:moveTo(ballX,ballY)
+
     -- Check if the ball collides with the bal
-    if (ballSpeedY>0) then
-        if (ballX > batX-40 and ballX < batX+40) then
-            if math.abs(ballY+ballradius - batY) < 3 then
-                ballSpeedY = - ballSpeedY
-            end
+    for shape, delta in pairs(HC.collisions(ballCircle)) do 
+        -- use the collision vector to calculate the new angle
+
+        if math.abs(delta.y) < math.abs(delta.x) then
+            ballSpeedX = - ballSpeedX
+        else
+            ballSpeedY = - ballSpeedY
         end
     end
 
 end
+
 
 
 function love.draw()
@@ -134,6 +155,14 @@ function love.draw()
         
     -- draw the ball
     love.graphics.draw(ballImage,ballX,ballY,0,brickScale,brickScale,64,64)
+
+    love.graphics.setColor(150,255,180)
+    batRectangle:draw('fill')
+
+    love.graphics.setColor(220,70,60)
+    ballCircle:draw('line')
+
+    love.graphics.setColor(255,255,255)
     
 end
 
