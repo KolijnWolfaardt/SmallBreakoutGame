@@ -24,7 +24,7 @@ listOfBricks = {}
 batX = screenWidth/2
 batY = screenHeight *0.9
 
-
+batSpeedX = 0
 
  -- Ball related variables
 ballX = screenWidth/2
@@ -32,16 +32,13 @@ ballY = screenHeight *0.85
 
 ballradius = 21
 
-ballSpeed = 400
+ballSpeed = 500
 ballSpeedX = ballSpeed*math.cos(0.9275)
 ballSpeedY = ballSpeed*math.sin(0.9275)
 
 ballStepsSinceBounce = 5
-
-
+batSpeedX = 0
 local text = {}
-
-text[1] = "  " .. ballSpeedX .. "  " .. ballSpeedY
 
 function love.load()
     --Set the window
@@ -105,6 +102,9 @@ function getPattern(x,y,number)
 end
 
 function love.update(dt)
+
+    batSpeedX = 0.8* (batX-love.mouse.getX()) + 0.2 * batSpeedX
+
     --Set the paddle position equal to the mouse position
     batX = love.mouse.getX()
 
@@ -112,21 +112,31 @@ function love.update(dt)
     ballY = ballY + ballSpeedY*dt
 
     if (ballX+ballradius > screenWidth) then
-        ballSpeedX = - ballSpeedX
-        decrementBallSpeed()
+        if (ballSpeedX > 0) then
+            ballSpeedX = - ballSpeedX
+            decrementBallSpeed()
+        end
     end
     if (ballX-ballradius < 0) then
-        ballSpeedX = - ballSpeedX
-        decrementBallSpeed()
+        if (ballSpeedX < 0) then
+            ballSpeedX = - ballSpeedX
+            decrementBallSpeed()
+        end
     end
     if (ballY+ballradius > screenHeight) then
-        ballSpeedY = - ballSpeedY
-        decrementBallSpeed()
+        if (ballSpeedY > 0) then
+            ballSpeedY = - ballSpeedY
+            decrementBallSpeed()
+        end
     end
     if (ballY-ballradius < 0) then
-        ballSpeedY = - ballSpeedY
-        decrementBallSpeed()
+        if (ballSpeedY < 0) then
+            ballSpeedY = - ballSpeedY
+            decrementBallSpeed()
+        end
     end
+
+    ballSpeed = ballSpeed - 0.1
 
     -- Update the physics objects
     batRectangle:moveTo(love.mouse.getX(),batY)
@@ -141,15 +151,30 @@ function love.update(dt)
             newAngle = angle + (angle - currentBallAngle)
 
             -- Now factor in the bat's speed
-            
 
-            text[#text+1] = string.format("Collision [" .. ballSpeedX .. "," .. ballSpeedY .. "]   " .. math.deg(angle)  .. "     " .. math.deg(currentBallAngle) .. "     " .. math.deg(newAngle))
+            batSpeedInfluence = -(math.atan(batSpeedX*0.05))
+            if batSpeedInfluence > 1.3 then
+                batSpeedInfluence = 1.3
+            end
+            if batSpeedInfluence < -1.3 then
+                batSpeedInfluence = -1.3
+            end
+
+            newAngle = newAngle + batSpeedInfluence
+
+            --if batSpeedInfluence > 0 then
+            --    ballSpeed = ballSpeed + math.abs(0.8*batSpeedX)
+            --else
+            --    ballSpeed = ballSpeed - math.abs(0.8*batSpeedX)
+            --end
+            --text[#text+1] = string.format("Batspeed " .. batSpeedX .. "  influence is " .. math.deg(batSpeedInfluence))
+            --text[#text+1] = string.format("Ballspeed " .. ballSpeed .. "  influence is " .. batSpeedInfluence .. " | " .. 0.8*batSpeedX)
 
             ballSpeedX = -math.cos(newAngle)* ballSpeed
             ballSpeedY = -math.sin(newAngle)* ballSpeed
 
-            ballStepsSinceBounce = 20
 
+            ballStepsSinceBounce = 20
         end
     else
         ballStepsSinceBounce = ballStepsSinceBounce -1
@@ -157,7 +182,7 @@ function love.update(dt)
 
     while #text > 40 do
         table.remove(text, 1)
-    end
+    end   
 
 end
 
@@ -206,8 +231,8 @@ function love.keyreleased(key)
 end
 
 function decrementBallSpeed()
-    ballSpeed = ballSpeed - 10
-    if (ballSpeed < 300) then
-        ballSpeed = 300
-    end
+    --ballSpeed = ballSpeed - 10
+    --if (ballSpeed < 400) then
+    --    ballSpeed = 400
+    --end
 end
