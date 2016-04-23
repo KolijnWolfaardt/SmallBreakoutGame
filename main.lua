@@ -32,11 +32,16 @@ ballY = screenHeight *0.85
 
 ballradius = 21
 
-ballSpeedX = 250
-ballSpeedY = -250
 ballSpeed = 400
+ballSpeedX = ballSpeed*math.cos(0.9275)
+ballSpeedY = ballSpeed*math.sin(0.9275)
+
+ballStepsSinceBounce = 5
 
 
+local text = {}
+
+text[1] = "  " .. ballSpeedX .. "  " .. ballSpeedY
 
 function love.load()
     --Set the window
@@ -108,30 +113,50 @@ function love.update(dt)
 
     if (ballX+ballradius > screenWidth) then
         ballSpeedX = - ballSpeedX
+        decrementBallSpeed()
     end
     if (ballX-ballradius < 0) then
         ballSpeedX = - ballSpeedX
+        decrementBallSpeed()
     end
     if (ballY+ballradius > screenHeight) then
         ballSpeedY = - ballSpeedY
+        decrementBallSpeed()
     end
     if (ballY-ballradius < 0) then
         ballSpeedY = - ballSpeedY
+        decrementBallSpeed()
     end
 
     -- Update the physics objects
     batRectangle:moveTo(love.mouse.getX(),batY)
     ballCircle:moveTo(ballX,ballY)
 
+    if ballStepsSinceBounce == 0 then
     -- Check if the ball collides with the bal
-    for shape, delta in pairs(HC.collisions(ballCircle)) do 
-        -- use the collision vector to calculate the new angle
+        for shape, delta in pairs(HC.collisions(batRectangle)) do 
+            -- use the collision vector to calculate the new angle
+            angle = math.atan2(delta.y,delta.x)
+            currentBallAngle =  math.atan2(ballSpeedY,ballSpeedX)
+            newAngle = angle + (angle - currentBallAngle)
 
-        if math.abs(delta.y) < math.abs(delta.x) then
-            ballSpeedX = - ballSpeedX
-        else
-            ballSpeedY = - ballSpeedY
+            -- Now factor in the bat's speed
+            
+
+            text[#text+1] = string.format("Collision [" .. ballSpeedX .. "," .. ballSpeedY .. "]   " .. math.deg(angle)  .. "     " .. math.deg(currentBallAngle) .. "     " .. math.deg(newAngle))
+
+            ballSpeedX = -math.cos(newAngle)* ballSpeed
+            ballSpeedY = -math.sin(newAngle)* ballSpeed
+
+            ballStepsSinceBounce = 20
+
         end
+    else
+        ballStepsSinceBounce = ballStepsSinceBounce -1
+    end
+
+    while #text > 40 do
+        table.remove(text, 1)
     end
 
 end
@@ -145,7 +170,7 @@ function love.draw()
             brickType = listOfBricks[i][j]
 
             if brickType > 0 then
-                love.graphics.draw(brickImages[brickType],sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,0,brickScale,brickScale,0,0)
+                --love.graphics.draw(brickImages[brickType],sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,0,brickScale,brickScale,0,0)
             end
         end
     end
@@ -156,6 +181,11 @@ function love.draw()
     -- draw the ball
     love.graphics.draw(ballImage,ballX,ballY,0,brickScale,brickScale,64,64)
 
+    for i = 1,#text do
+        love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
+        love.graphics.print(text[#text - (i-1)], 10, i * 15)
+    end
+
     love.graphics.setColor(150,255,180)
     batRectangle:draw('fill')
 
@@ -163,6 +193,7 @@ function love.draw()
     ballCircle:draw('line')
 
     love.graphics.setColor(255,255,255)
+   
     
 end
 
@@ -172,4 +203,11 @@ end
 
 
 function love.keyreleased(key)
+end
+
+function decrementBallSpeed()
+    ballSpeed = ballSpeed - 10
+    if (ballSpeed < 300) then
+        ballSpeed = 300
+    end
 end
