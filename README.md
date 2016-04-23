@@ -20,34 +20,34 @@ What features have to exist for it to count as done?
 ----------------------------------------------------
 ####Interface:
 
- - Bounce a ball around, break bricks
- - Increment the score, and detect when a game is complete
- - Have a menu system to start a new game, and view (local) highscores
- - Implement a lives system
- - Have the game adjust the window size automatically
- - Be able to turn on/off music and sound effects
+[x] Bounce a ball around, break bricks						
+[ ] Increment the score, and detect when a game is complete
+[ ] Have a menu system to start a new game, and view (local) highscores
+[ ] Implement a lives system
+[ ] Have the game adjust the window size automatically
+[ ] Be able to turn on/off music and sound effects
 
 
 ####Visuals:
 
- - Create some background patterns to make it prettier
- - Have more interesting brick patterns
- - Particle effects when a brick is broken
- - Animation effect when the brick is broken
+[ ] Create some background patterns to make it prettier
+[ ] Have more interesting brick patterns
+[ ] Particle effects when a brick is broken
+[ ] Animation effect when the brick is broken
 
 ####Audio:
 
- - Audio effects when the ball bounces or destroys a brick
- - Background music
+[ ] Audio effects when the ball bounces or destroys a brick
+[ ] Background music
 
 Running from source
 -------------------
 
  On Linux:
 
-  - Download the liblove.deb and love.deb files from the website.
-  - Install the deb files. Alternatively, you can also use the PPA.
-  - run love in the folder
+ - Download the liblove.deb and love.deb files from the website.
+ - Install the deb files. Alternatively, you can also use the PPA.
+ - run love in the folder
 
 
 Building the game
