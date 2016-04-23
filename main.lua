@@ -52,6 +52,8 @@ function love.load()
     ball.image = love.graphics.newImage("images/ballYellow_05.png")
     coinImage = love.graphics.newImage("images/coin_16.png")
 
+    bat.bounceSound = love.audio.newSource("sounds/tone1.ogg","static")
+
     brickInc = (screenWidth-2*sideOffsets)/bricksInX
     brickScale = brickInc/brickWidth
 
@@ -149,8 +151,8 @@ function love.update(dt)
             -- use the collision vector to calculate the new angle
 
             bounceBall(delta,true)
-
             ball.stepsSinceBounce = 20
+            bat.bounceSound:play()
         end
     else
         ball.stepsSinceBounce = ball.stepsSinceBounce -1
