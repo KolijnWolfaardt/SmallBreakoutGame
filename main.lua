@@ -26,6 +26,7 @@ bat = {}
 bat.x = screenWidth/2
 bat.y = screenHeight *0.9
 bat.speedX = 0
+bat.yOffset = 0
 
  -- Ball related variables
 ball = {}
@@ -36,6 +37,7 @@ ball.normalSpeed = 600
 ball.speedX = ball.normalSpeed*math.cos(0.9275)
 ball.speedY = ball.normalSpeed*math.sin(0.9275)
 ball.stepsSinceBounce = 5
+
 
 local text = {}
 
@@ -61,6 +63,8 @@ function love.load()
     brickInc = (screenWidth-2*sideOffsets)/bricksInX
     brickScale = brickInc/brickWidth
 
+    love.mouse.setVisible(false)
+
     --Generate all the random bricks
     for i=1,bricksInX do
         listOfBricks[i] = {}
@@ -83,6 +87,12 @@ function love.load()
     bat.object:moveTo(love.mouse.getX(),bat.y)
 
     ball.object = HC.circle(ball.x,ball.y,ball.radius)
+
+    ball.particleEngine = createParticleSystem(particleImage)
+    ball.particleEngine:setEmissionRate(30)
+    partSystem:setLinearAcceleration(-20, -20, 20, 20)
+    partSystem:setParticleLifetime(0.8, 1.0)
+    partSystem:setSizes(0.05,0.02,0.01,0.005)
 
 end
 
@@ -162,10 +172,14 @@ function love.update(dt)
     end
 
     -- ballSpeed = ballSpeed - 0.1
+    if (bat.yOffset > 0) then
+        bat.yOffset = bat.yOffset - 0.6
+    end
 
     -- Update the physics objects
     bat.object:moveTo(love.mouse.getX(),bat.y)
     ball.object:moveTo(ball.x,ball.y)
+    ball.particleEngine:moveTo(ball.x,ball.y)
 
     if ball.stepsSinceBounce == 0 then
     -- Check if the ball collides with the bal
@@ -175,6 +189,8 @@ function love.update(dt)
             bounceBall(delta,true)
             ball.stepsSinceBounce = 20
             bat.bounceSound:play()
+
+            bat.yOffset = 4
         end
     else
         ball.stepsSinceBounce = ball.stepsSinceBounce -1
@@ -217,6 +233,7 @@ function love.update(dt)
     for i=1,numberOfBrickTypes do
         brickParticles[i]:update(dt)
     end
+    ball.particleEngine:update(dt)
 
 end
 
@@ -234,7 +251,7 @@ function bounceBall(distVector,withBat)
             batSpeedInfluence = -1.1
         end
 
-        newAngle = newAngle + batSpeedInfluence
+        newAngle = newAngle --+ batSpeedInfluence
 
         --if batSpeedInfluence > 0 then
         --    ballSpeed = ballSpeed + math.abs(0.8*batSpeedX)
@@ -276,7 +293,7 @@ function love.draw()
     love.graphics.setColor(255,255,255)
 
     --draw the bat
-    love.graphics.draw(bat.image,bat.x,bat.y,0,brickScale,brickScale,320,70)
+    love.graphics.draw(bat.image,bat.x,bat.y+bat.yOffset,0,brickScale,brickScale,320,70)
         
     -- draw the ball
     love.graphics.draw(ball.image,ball.x,ball.y,0,brickScale,brickScale,64,64)
@@ -289,6 +306,7 @@ function love.draw()
     for i=1,numberOfBrickTypes do
         love.graphics.draw(brickParticles[i],0,0)
     end
+    love.graphics.draw(ball.particleEngine,0,0)
 end
 
 

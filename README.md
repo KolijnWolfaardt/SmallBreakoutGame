@@ -3,7 +3,7 @@ SmallBreakoutGame
 
 This is a small breakout clone written in the [LÖVE](https://love2d.org/) engine. 
 
-![Screenshot of game](https://raw.githubusercontent.com/KolijnWolfaardt/SmallBreakoutGame/master/SampleImages/screenshot1.png)
+![Screenshot of game](SampleImages/screenshot2.png)
 
 
 Why a breakout game?
