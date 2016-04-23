@@ -9,16 +9,16 @@ batImage = nil
 
 brickScale = 0.3
 brickWidth = 108
-bricksInX = 50
-bricksInY = 15
+bricksInX = 40
+bricksInY = 10
 
 screenWidth = 1600
 screenHeight = 900
 
-sideOffsets = 40
+sideOffsets = 200
 
 listOfBricks = {}
-
+listOfBrickObjects = {}
 
 -- bat related variables
 batX = screenWidth/2
@@ -30,9 +30,9 @@ batSpeedX = 0
 ballX = screenWidth/2
 ballY = screenHeight *0.85
 
-ballradius = 21
+ballradius = 18
 
-ballSpeed = 500
+ballSpeed = 600
 ballSpeedX = ballSpeed*math.cos(0.9275)
 ballSpeedY = ballSpeed*math.sin(0.9275)
 
@@ -57,21 +57,24 @@ function love.load()
     brickInc = (screenWidth-2*sideOffsets)/bricksInX
     brickScale = brickInc/brickWidth
 
-    print ("Scale is " .. brickScale)
-
     --Generate all the random bricks
     for i=1,bricksInX do
         listOfBricks[i] = {}
+        listOfBrickObjects[i] = {}
 
         for j=1,bricksInY do
-            listOfBricks[i][j] = getPattern(i,j,3)
+            listOfBricks[i][j] = getPattern(i,j,1)
+            listOfBrickObjects[i][j] = HC.rectangle(sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,brickInc,brickInc)
+            listOfBrickObjects[i][j].isBrick = true
+            listOfBrickObjects[i][j].i = i
+            listOfBrickObjects[i][j].j = j
         end
     end
 
     love.graphics.setBackgroundColor(10,10,10)
 
     -- Set up the collision mechanics
-    batRectangle = HC.rectangle(200,200,200,40)
+    batRectangle = HC.rectangle(200,200,200,38)
     batRectangle:moveTo(love.mouse.getX(),batY)
 
     ballCircle = HC.circle(ballX,ballY,ballradius)
@@ -136,7 +139,7 @@ function love.update(dt)
         end
     end
 
-    ballSpeed = ballSpeed - 0.1
+    -- ballSpeed = ballSpeed - 0.1
 
     -- Update the physics objects
     batRectangle:moveTo(love.mouse.getX(),batY)
@@ -146,38 +149,37 @@ function love.update(dt)
     -- Check if the ball collides with the bal
         for shape, delta in pairs(HC.collisions(batRectangle)) do 
             -- use the collision vector to calculate the new angle
-            angle = math.atan2(delta.y,delta.x)
-            currentBallAngle =  math.atan2(ballSpeedY,ballSpeedX)
-            newAngle = angle + (angle - currentBallAngle)
 
-            -- Now factor in the bat's speed
-
-            batSpeedInfluence = -(math.atan(batSpeedX*0.05))
-            if batSpeedInfluence > 1.3 then
-                batSpeedInfluence = 1.3
-            end
-            if batSpeedInfluence < -1.3 then
-                batSpeedInfluence = -1.3
-            end
-
-            newAngle = newAngle + batSpeedInfluence
-
-            --if batSpeedInfluence > 0 then
-            --    ballSpeed = ballSpeed + math.abs(0.8*batSpeedX)
-            --else
-            --    ballSpeed = ballSpeed - math.abs(0.8*batSpeedX)
-            --end
-            --text[#text+1] = string.format("Batspeed " .. batSpeedX .. "  influence is " .. math.deg(batSpeedInfluence))
-            --text[#text+1] = string.format("Ballspeed " .. ballSpeed .. "  influence is " .. batSpeedInfluence .. " | " .. 0.8*batSpeedX)
-
-            ballSpeedX = -math.cos(newAngle)* ballSpeed
-            ballSpeedY = -math.sin(newAngle)* ballSpeed
-
+            bounceBall(delta,true)
 
             ballStepsSinceBounce = 20
         end
     else
         ballStepsSinceBounce = ballStepsSinceBounce -1
+    end
+
+    nextFunction,collisionTable = pairs(HC.collisions(ballCircle))
+     
+    if (next(collisionTable) ~= nil) then
+        shape, delta = nextFunction(collisionTable,nil)
+    
+    --for shape, delta in pairs(HC.collisions(ballCircle)) do
+        if ((delta.x^2 + delta.y^2) > 0.1) then
+            if (shape.isBrick == true) then
+                i = shape.i
+                j = shape.j
+                listOfBricks[i][j] = 0
+                listOfBrickObjects[i][j] = nil
+                HC.remove(shape)
+
+                --bounce the ball
+                if (ballStepsSinceBounce == 0) then
+                   bounceBall(delta,false)
+                   --ballStepsSinceBounce = 1
+                end
+            end
+        end
+
     end
 
     while #text > 40 do
@@ -186,6 +188,40 @@ function love.update(dt)
 
 end
 
+function bounceBall(distVector,withBat)
+    angle = math.atan2(distVector.y,distVector.x)
+    currentBallAngle =  math.atan2(ballSpeedY,ballSpeedX)
+    newAngle = angle + (angle - currentBallAngle)
+
+    if (withBat == true) then
+        batSpeedInfluence = -(math.atan(batSpeedX*0.05))
+        if batSpeedInfluence > 1.1 then
+            batSpeedInfluence = 1.1
+        end
+        if batSpeedInfluence < -1.1 then
+            batSpeedInfluence = -1.1
+        end
+
+        newAngle = newAngle + batSpeedInfluence
+
+        --if batSpeedInfluence > 0 then
+        --    ballSpeed = ballSpeed + math.abs(0.8*batSpeedX)
+        --else
+        --    ballSpeed = ballSpeed - math.abs(0.8*batSpeedX)
+        --end
+        --text[#text+1] = string.format("Batspeed " .. batSpeedX .. "  influence is " .. math.deg(batSpeedInfluence))
+        --text[#text+1] = string.format("Ballspeed " .. ballSpeed .. "  influence is " .. batSpeedInfluence .. " | " .. 0.8*batSpeedX)
+    end
+
+    while math.abs(newAngle%math.pi) < 0.05 do
+        newAngle = newAngle *1.5
+        text[#text+1] = string.format("Correction performed to " .. newAngle)
+    end
+
+    ballSpeedX = -math.cos(newAngle)* ballSpeed
+    ballSpeedY = -math.sin(newAngle)* ballSpeed
+    
+end
 
 
 function love.draw()
@@ -195,10 +231,17 @@ function love.draw()
             brickType = listOfBricks[i][j]
 
             if brickType > 0 then
-                --love.graphics.draw(brickImages[brickType],sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,0,brickScale,brickScale,0,0)
+                love.graphics.draw(brickImages[brickType],sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,0,brickScale,brickScale,0,0)
             end
         end
     end
+    love.graphics.setColor(150,255,180)
+    batRectangle:draw('fill')
+
+    love.graphics.setColor(220,70,60)
+    ballCircle:draw('line')
+
+    love.graphics.setColor(255,255,255)
 
     --draw the bat
     love.graphics.draw(batImage,batX,batY,0,brickScale,brickScale,320,70)
@@ -210,16 +253,6 @@ function love.draw()
         love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
         love.graphics.print(text[#text - (i-1)], 10, i * 15)
     end
-
-    love.graphics.setColor(150,255,180)
-    batRectangle:draw('fill')
-
-    love.graphics.setColor(220,70,60)
-    ballCircle:draw('line')
-
-    love.graphics.setColor(255,255,255)
-   
-    
 end
 
 
