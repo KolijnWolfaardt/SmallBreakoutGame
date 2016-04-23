@@ -20,24 +20,22 @@ sideOffsets = 200
 listOfBricks = {}
 listOfBrickObjects = {}
 
--- bat related variables
-batX = screenWidth/2
-batY = screenHeight *0.9
-
-batSpeedX = 0
+-- Bat related variables
+bat = {}
+bat.x = screenWidth/2
+bat.y = screenHeight *0.9
+bat.speedX = 0
 
  -- Ball related variables
-ballX = screenWidth/2
-ballY = screenHeight *0.85
+ball = {}
+ball.x = screenWidth/2
+ball.y = screenHeight *0.85
+ball.radius = 18
+ball.normalSpeed = 600
+ball.speedX = ball.normalSpeed*math.cos(0.9275)
+ball.speedY = ball.normalSpeed*math.sin(0.9275)
+ball.stepsSinceBounce = 5
 
-ballradius = 18
-
-ballSpeed = 600
-ballSpeedX = ballSpeed*math.cos(0.9275)
-ballSpeedY = ballSpeed*math.sin(0.9275)
-
-ballStepsSinceBounce = 5
-batSpeedX = 0
 local text = {}
 
 function love.load()
@@ -50,8 +48,8 @@ function love.load()
         brickImages[i] = love.graphics.newImage("images/" .. brickFilenames[i])
     end
 
-    batImage = love.graphics.newImage("images/paddle_02.png")
-    ballImage = love.graphics.newImage("images/ballYellow_05.png")
+    bat.image = love.graphics.newImage("images/paddle_02.png")
+    ball.image = love.graphics.newImage("images/ballYellow_05.png")
     coinImage = love.graphics.newImage("images/coin_16.png")
 
     brickInc = (screenWidth-2*sideOffsets)/bricksInX
@@ -74,10 +72,10 @@ function love.load()
     love.graphics.setBackgroundColor(10,10,10)
 
     -- Set up the collision mechanics
-    batRectangle = HC.rectangle(200,200,200,38)
-    batRectangle:moveTo(love.mouse.getX(),batY)
+    bat.object = HC.rectangle(200,200,200,38)
+    bat.object:moveTo(love.mouse.getX(),bat.y)
 
-    ballCircle = HC.circle(ballX,ballY,ballradius)
+    ball.object = HC.circle(ball.x,ball.y,ball.radius)
 end
 
 
@@ -106,35 +104,35 @@ end
 
 function love.update(dt)
 
-    batSpeedX = 0.8* (batX-love.mouse.getX()) + 0.2 * batSpeedX
+    bat.speedX = 0.8* (bat.x-love.mouse.getX()) + 0.2 * bat.speedX
 
     --Set the paddle position equal to the mouse position
-    batX = love.mouse.getX()
+    bat.x = love.mouse.getX()
 
-    ballX = ballX + ballSpeedX*dt
-    ballY = ballY + ballSpeedY*dt
+    ball.x = ball.x + ball.speedX*dt
+    ball.y = ball.y + ball.speedY*dt
 
-    if (ballX+ballradius > screenWidth) then
-        if (ballSpeedX > 0) then
-            ballSpeedX = - ballSpeedX
+    if (ball.x+ball.radius > screenWidth) then
+        if (ball.speedX > 0) then
+            ball.speedX = - ball.speedX
             decrementBallSpeed()
         end
     end
-    if (ballX-ballradius < 0) then
-        if (ballSpeedX < 0) then
-            ballSpeedX = - ballSpeedX
+    if (ball.x-ball.radius < 0) then
+        if (ball.speedX < 0) then
+            ball.speedX = - ball.speedX
             decrementBallSpeed()
         end
     end
-    if (ballY+ballradius > screenHeight) then
-        if (ballSpeedY > 0) then
-            ballSpeedY = - ballSpeedY
+    if (ball.y+ball.radius > screenHeight) then
+        if (ball.speedY > 0) then
+            ball.speedY = - ball.speedY
             decrementBallSpeed()
         end
     end
-    if (ballY-ballradius < 0) then
-        if (ballSpeedY < 0) then
-            ballSpeedY = - ballSpeedY
+    if (ball.y-ball.radius < 0) then
+        if (ball.speedY < 0) then
+            ball.speedY = - ball.speedY
             decrementBallSpeed()
         end
     end
@@ -142,23 +140,23 @@ function love.update(dt)
     -- ballSpeed = ballSpeed - 0.1
 
     -- Update the physics objects
-    batRectangle:moveTo(love.mouse.getX(),batY)
-    ballCircle:moveTo(ballX,ballY)
+    bat.object:moveTo(love.mouse.getX(),bat.y)
+    ball.object:moveTo(ball.x,ball.y)
 
-    if ballStepsSinceBounce == 0 then
+    if ball.stepsSinceBounce == 0 then
     -- Check if the ball collides with the bal
-        for shape, delta in pairs(HC.collisions(batRectangle)) do 
+        for shape, delta in pairs(HC.collisions(bat.object)) do 
             -- use the collision vector to calculate the new angle
 
             bounceBall(delta,true)
 
-            ballStepsSinceBounce = 20
+            ball.stepsSinceBounce = 20
         end
     else
-        ballStepsSinceBounce = ballStepsSinceBounce -1
+        ball.stepsSinceBounce = ball.stepsSinceBounce -1
     end
 
-    nextFunction,collisionTable = pairs(HC.collisions(ballCircle))
+    nextFunction,collisionTable = pairs(HC.collisions(ball.object))
      
     if (next(collisionTable) ~= nil) then
         shape, delta = nextFunction(collisionTable,nil)
@@ -173,9 +171,9 @@ function love.update(dt)
                 HC.remove(shape)
 
                 --bounce the ball
-                if (ballStepsSinceBounce == 0) then
+                if (ball.stepsSinceBounce == 0) then
                    bounceBall(delta,false)
-                   --ballStepsSinceBounce = 1
+                   --ball.stepsSinceBounce = 1
                 end
             end
         end
@@ -190,11 +188,11 @@ end
 
 function bounceBall(distVector,withBat)
     angle = math.atan2(distVector.y,distVector.x)
-    currentBallAngle =  math.atan2(ballSpeedY,ballSpeedX)
+    currentBallAngle =  math.atan2(ball.speedY,ball.speedX)
     newAngle = angle + (angle - currentBallAngle)
 
     if (withBat == true) then
-        batSpeedInfluence = -(math.atan(batSpeedX*0.05))
+        batSpeedInfluence = -(math.atan(bat.speedX*0.05))
         if batSpeedInfluence > 1.1 then
             batSpeedInfluence = 1.1
         end
@@ -218,8 +216,8 @@ function bounceBall(distVector,withBat)
         text[#text+1] = string.format("Correction performed to " .. newAngle)
     end
 
-    ballSpeedX = -math.cos(newAngle)* ballSpeed
-    ballSpeedY = -math.sin(newAngle)* ballSpeed
+    ball.speedX = -math.cos(newAngle)* ball.normalSpeed
+    ball.speedY = -math.sin(newAngle)* ball.normalSpeed
     
 end
 
@@ -236,18 +234,18 @@ function love.draw()
         end
     end
     love.graphics.setColor(150,255,180)
-    batRectangle:draw('fill')
+    bat.object:draw('fill')
 
     love.graphics.setColor(220,70,60)
-    ballCircle:draw('line')
+    ball.object :draw('line')
 
     love.graphics.setColor(255,255,255)
 
     --draw the bat
-    love.graphics.draw(batImage,batX,batY,0,brickScale,brickScale,320,70)
+    love.graphics.draw(bat.image,bat.x,bat.y,0,brickScale,brickScale,320,70)
         
     -- draw the ball
-    love.graphics.draw(ballImage,ballX,ballY,0,brickScale,brickScale,64,64)
+    love.graphics.draw(ball.image,ball.x,ball.y,0,brickScale,brickScale,64,64)
 
     for i = 1,#text do
         love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
