@@ -15,6 +15,7 @@ bricksInY = 10
 
 screenWidth = 1600
 screenHeight = 900
+sidebarWidth = 150
 
 sideOffsets = 200
 
@@ -23,20 +24,26 @@ listOfBrickObjects = {}
 
 -- Bat related variables
 bat = {}
-bat.x = screenWidth/2
+bat.x = (screenWidth - sidebarWidth)/2
 bat.y = screenHeight *0.9
 bat.speedX = 0
 bat.yOffset = 0
 
  -- Ball related variables
 ball = {}
-ball.x = screenWidth/2
+ball.x = (screenWidth - sidebarWidth)/2
 ball.y = screenHeight *0.85
 ball.radius = 18
 ball.normalSpeed = 600
 ball.speedX = ball.normalSpeed*math.cos(0.9275)
 ball.speedY = ball.normalSpeed*math.sin(0.9275)
 ball.stepsSinceBounce = 5
+
+gameState = {}
+gameState.hasStarted = false
+gameState.difficulty = 1
+gameState.playerLives = 3
+gameState.playerScore = 0
 
 
 local text = {}
@@ -60,7 +67,9 @@ function love.load()
 
     bat.bounceSound = love.audio.newSource("sounds/tone1.ogg","static")
 
-    brickInc = (screenWidth-2*sideOffsets)/bricksInX
+    sidebarImage = love.graphics.newImage("images/sidebar.png")
+
+    brickInc = (screenWidth-sidebarWidth-2*sideOffsets)/bricksInX
     brickScale = brickInc/brickWidth
 
     love.mouse.setVisible(false)
@@ -93,6 +102,10 @@ function love.load()
     partSystem:setLinearAcceleration(-20, -20, 20, 20)
     partSystem:setParticleLifetime(0.8, 1.0)
     partSystem:setSizes(0.05,0.02,0.01,0.005)
+
+    arialFont = love.graphics.newFont("prototype_font/Prototype.ttf",22)
+    scoreText = love.graphics.newText(arialFont,"Score :")
+    scoreNumber = love.graphics.newText(arialFont,"0")
 
 end
 
@@ -146,7 +159,7 @@ function love.update(dt)
     ball.x = ball.x + ball.speedX*dt
     ball.y = ball.y + ball.speedY*dt
 
-    if (ball.x+ball.radius > screenWidth) then
+    if (ball.x+ball.radius > screenWidth-sidebarWidth) then
         if (ball.speedX > 0) then
             ball.speedX = - ball.speedX
             decrementBallSpeed()
@@ -218,6 +231,8 @@ function love.update(dt)
                    --ball.stepsSinceBounce = 1
                 end
 
+                gameState.playerScore = gameState.playerScore + 1
+
                 listOfBricks[i][j] = 0
                 listOfBrickObjects[i][j] = nil
                 HC.remove(shape)
@@ -251,7 +266,7 @@ function bounceBall(distVector,withBat)
             batSpeedInfluence = -1.1
         end
 
-        newAngle = newAngle --+ batSpeedInfluence
+        newAngle = newAngle + batSpeedInfluence
 
         --if batSpeedInfluence > 0 then
         --    ballSpeed = ballSpeed + math.abs(0.8*batSpeedX)
@@ -307,6 +322,15 @@ function love.draw()
         love.graphics.draw(brickParticles[i],0,0)
     end
     love.graphics.draw(ball.particleEngine,0,0)
+
+    sideBarPos = screenWidth-sidebarWidth
+    love.graphics.draw(sidebarImage,sideBarPos,0,0,1,10)
+
+    love.graphics.setColor(229,58,58)
+    love.graphics.draw(scoreText,sideBarPos+20,40)
+    scoreNumber:set(gameState.playerScore)
+    love.graphics.draw(scoreNumber,sideBarPos+scoreText:getWidth(),60)
+    love.graphics.setColor(255,255,255)
 end
 
 

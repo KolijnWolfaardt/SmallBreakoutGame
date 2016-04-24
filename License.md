@@ -8,3 +8,5 @@ The images provided in this repo were created by [Kenny Vleugels](http://kenney.
 
 
 The HC [library](https://github.com/vrld/HC) is used for collision detection and the like. The license can be viewed [here](http://hc.readthedocs.org/en/latest/license.html)
+
+The Federal Escort font was found on [http://www.1001freefonts.com](http://www.1001freefonts.com) and is free for personal use.
