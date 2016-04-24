@@ -10,14 +10,15 @@ batImage = nil
 
 brickScale = 0.3
 brickWidth = 108
-bricksInX = 40
-bricksInY = 10
+bricksInX = 32
+bricksInY = 8
 
 screenWidth = 1600
 screenHeight = 900
 sidebarWidth = 150
 
-sideOffsets = 200
+sideOffsets = 50
+topOffsets = 38
 
 listOfBricks = {}
 listOfBrickObjects = {}
@@ -40,7 +41,7 @@ ball.speedY = ball.normalSpeed*math.sin(0.9275)
 ball.stepsSinceBounce = 5
 
 gameState = {}
-gameState.hasStarted = false
+gameState.gameState = 1
 gameState.difficulty = 1
 gameState.playerLives = 3
 gameState.playerScore = 0
@@ -74,14 +75,17 @@ function love.load()
 
     love.mouse.setVisible(false)
 
+    math.randomseed(os.time())
+    pattern = math.random(1, 4)
+
     --Generate all the random bricks
     for i=1,bricksInX do
         listOfBricks[i] = {}
         listOfBrickObjects[i] = {}
 
         for j=1,bricksInY do
-            listOfBricks[i][j] = getPattern(i,j,1)
-            listOfBrickObjects[i][j] = HC.rectangle(sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,brickInc,brickInc)
+            listOfBricks[i][j] = getPattern(i,j,pattern)
+            listOfBrickObjects[i][j] = HC.rectangle(sideOffsets+(i-1)*brickInc,topOffsets+(j-1)*brickInc,brickInc,brickInc)
             listOfBrickObjects[i][j].isBrick = true
             listOfBrickObjects[i][j].i = i
             listOfBrickObjects[i][j].j = j
@@ -89,7 +93,7 @@ function love.load()
         end
     end
 
-    love.graphics.setBackgroundColor(10,10,10)
+    love.graphics.setBackgroundColor(30,30,30)
 
     -- Set up the collision mechanics
     bat.object = HC.rectangle(200,200,bat.image:getWidth()*brickScale,bat.image:getHeight()*brickScale)
@@ -145,7 +149,15 @@ function getPattern(x,y,number)
                 return 4
             end
         end
-
+    elseif number == 4 then
+        if (x%3 ==0) or (y%3 == 0) then
+            if (x%3 ==0) and (y%3 == 0) then
+                return 8
+            end
+            return 5
+        else 
+            return 1
+        end
     end
 end
 
@@ -156,39 +168,41 @@ function love.update(dt)
     --Set the paddle position equal to the mouse position
     bat.x = love.mouse.getX()
 
-    ball.x = ball.x + ball.speedX*dt
-    ball.y = ball.y + ball.speedY*dt
+    if gameState.gameState == 2 then
+        ball.x = ball.x + ball.speedX*dt
+        ball.y = ball.y + ball.speedY*dt
 
-    if (ball.x+ball.radius > screenWidth-sidebarWidth) then
-        if (ball.speedX > 0) then
-            ball.speedX = - ball.speedX
-            decrementBallSpeed()
+        if (ball.x+ball.radius > screenWidth-sidebarWidth) then
+            if (ball.speedX > 0) then
+                ball.speedX = - ball.speedX
+                decrementBallSpeed()
+            end
         end
-    end
-    if (ball.x-ball.radius < 0) then
-        if (ball.speedX < 0) then
-            ball.speedX = - ball.speedX
-            decrementBallSpeed()
+        if (ball.x-ball.radius < 0) then
+            if (ball.speedX < 0) then
+                ball.speedX = - ball.speedX
+                decrementBallSpeed()
+            end
         end
-    end
-    if (ball.y+ball.radius > screenHeight) then
-        if (ball.speedY > 0) then
-            ball.speedY = - ball.speedY
-            decrementBallSpeed()
+        if (ball.y > screenHeight+ball.radius) then
+            -- Lose a life
+            gameState.gameState = 1
         end
-    end
-    if (ball.y-ball.radius < 0) then
-        if (ball.speedY < 0) then
-            ball.speedY = - ball.speedY
-            decrementBallSpeed()
+        if (ball.y-ball.radius < 0) then
+            if (ball.speedY < 0) then
+                ball.speedY = - ball.speedY
+                decrementBallSpeed()
+            end
         end
-    end
 
-    -- ballSpeed = ballSpeed - 0.1
-    if (bat.yOffset > 0) then
-        bat.yOffset = bat.yOffset - 0.6
+        -- ballSpeed = ballSpeed - 0.1
+        if (bat.yOffset > 0) then
+            bat.yOffset = bat.yOffset - 0.6
+        end
+    elseif gameState.gameState == 1 then
+        ball.x = love.mouse.getX()
+        ball.y = bat.y-ball.radius*3
     end
-
     -- Update the physics objects
     bat.object:moveTo(love.mouse.getX(),bat.y)
     ball.object:moveTo(ball.x,ball.y)
@@ -226,7 +240,7 @@ function love.update(dt)
                    bounceBall(delta,false)
 
                    pSystem  = brickParticles[listOfBricks[i][j]]
-                   pSystem:setPosition(sideOffsets+(i-0.5)*brickInc,sideOffsets+(j-0.5)*brickInc)
+                   pSystem:setPosition(sideOffsets+(i-0.5)*brickInc,topOffsets+(j-0.5)*brickInc)
                    pSystem:emit(20)
                    --ball.stepsSinceBounce = 1
                 end
@@ -258,15 +272,13 @@ function bounceBall(distVector,withBat)
     newAngle = angle + (angle - currentBallAngle)
 
     if (withBat == true) then
-        batSpeedInfluence = -(math.atan(bat.speedX*0.05))
-        if batSpeedInfluence > 1.1 then
-            batSpeedInfluence = 1.1
-        end
-        if batSpeedInfluence < -1.1 then
-            batSpeedInfluence = -1.1
-        end
+        batSpeedInfluence = -((math.atan(bat.speedX*0.1))/math.pi)*0.9
+        possibleAngle = (math.pi - newAngle)*batSpeedInfluence
 
-        newAngle = newAngle + batSpeedInfluence
+        -- Check that the bat speed does not push the angle negative
+
+        newAngle = (newAngle + possibleAngle) % (math.pi*2)
+        --text[#text+1] = string.format("NewAngle is " .. math.deg(newAngle) ..". Bat influence was " .. math.deg(batSpeedInfluence))
 
         --if batSpeedInfluence > 0 then
         --    ballSpeed = ballSpeed + math.abs(0.8*batSpeedX)
@@ -277,9 +289,9 @@ function bounceBall(distVector,withBat)
         --text[#text+1] = string.format("Ballspeed " .. ballSpeed .. "  influence is " .. batSpeedInfluence .. " | " .. 0.8*batSpeedX)
     end
 
-    while math.abs(newAngle%math.pi) < 0.05 do
+    while math.abs(newAngle%math.pi) < 0.09 do
         newAngle = newAngle *1.5
-        text[#text+1] = string.format("Correction performed to " .. newAngle)
+        -- text[#text+1] = string.format("Correction performed to " .. math.deg(newAngle))
     end
 
     ball.speedX = -math.cos(newAngle)* ball.normalSpeed
@@ -295,7 +307,7 @@ function love.draw()
             brickType = listOfBricks[i][j]
 
             if brickType > 0 then
-                love.graphics.draw(brickImages[brickType],sideOffsets+(i-1)*brickInc,sideOffsets+(j-1)*brickInc,0,brickScale,brickScale,0,0)
+                love.graphics.draw(brickImages[brickType],sideOffsets+(i-1)*brickInc,topOffsets+(j-1)*brickInc,0,brickScale,brickScale,0,0)
             end
         end
     end
@@ -318,11 +330,13 @@ function love.draw()
         love.graphics.print(text[#text - (i-1)], 10, i * 15)
     end
 
+    love.graphics.setColor(255,255,255, 140)
     for i=1,numberOfBrickTypes do
         love.graphics.draw(brickParticles[i],0,0)
     end
     love.graphics.draw(ball.particleEngine,0,0)
 
+    love.graphics.setColor(255,255,255, 255)
     sideBarPos = screenWidth-sidebarWidth
     love.graphics.draw(sidebarImage,sideBarPos,0,0,1,10)
 
@@ -342,8 +356,24 @@ function love.keyreleased(key)
 end
 
 function decrementBallSpeed()
-    --ballSpeed = ballSpeed - 10
-    --if (ballSpeed < 400) then
-    --    ballSpeed = 400
+    --ball.normalSpeed = ball.normalSpeed - 10
+    --if (ball.normalSpeed < 400) then
+    --    ball.normalSpeed = 400
     --end
+end
+
+
+function love.mousepressed(x,y,button,istouch)
+    if gameState.gameState == 1 then
+        gameState.gameState = 2
+
+        -- calculate the required angle for the ball
+        ball.speedX = -bat.speedX*14
+        if (ball.speedX > 0.9*ball.normalSpeed) then
+            ball.speedX = 0.9*ball.normalSpeed
+        elseif (ball.speedX < -0.9*ball.normalSpeed) then
+            ball.speedX = -0.9*ball.normalSpeed
+        end
+        ball.speedY = -math.sqrt(ball.normalSpeed^2 - ball.speedX^2)
+    end    
 end

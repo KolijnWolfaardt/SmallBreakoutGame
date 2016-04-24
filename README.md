@@ -22,8 +22,9 @@ What features have to exist for it to count as done?
 ----------------------------------------------------
 ####Interface:
 
-  ✓ Bounce a ball around, break bricks						
-  - Increment the score, and detect when a game is complete
+  - ✓ Bounce a ball around, break bricks						
+  - ✓ Increment the score
+  - Detect when a game is complete
   - Have a menu system to start a new game, and view (local) highscores
   - Implement a lives system
   - Have the game adjust the window size automatically
@@ -33,9 +34,9 @@ What features have to exist for it to count as done?
 ####Visuals:
 
  - Create some background patterns to make it prettier
- - Have more interesting brick patterns
- - Particle effects when a brick is broken
- - Animation effect when the brick is broken
+ - ✓ Have more interesting brick patterns
+ - ✓ Particle effects when a brick is broken
+ - ✓ Animation effect when the brick is broken
 
 ####Audio:
 
