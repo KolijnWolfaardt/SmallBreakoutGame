@@ -20,9 +20,6 @@ sidebarWidth = 150
 sideOffsets = 50
 topOffsets = 38
 
-listOfBricks = {}
-listOfBrickObjects = {}
-
 -- Bat related variables
 bat = {}
 bat.x = (screenWidth - sidebarWidth)/2
@@ -41,15 +38,48 @@ ball.speedY = ball.normalSpeed*math.sin(0.9275)
 ball.stepsSinceBounce = 5
 
 gameState = {}
-gameState.gameState = 1
-gameState.difficulty = 1
-gameState.playerLives = 3
-gameState.playerScore = 0
-
 
 local text = {}
 
 function love.load()
+
+    loadAssets()
+    resetBoard()
+end
+
+
+function resetBoard()
+
+    math.randomseed(os.time())
+    pattern = math.random(1, 4)
+
+    listOfBricks = {}
+    listOfBrickObjects = {}
+
+    --Generate all the random bricks
+    for i=1,bricksInX do
+        listOfBricks[i] = {}
+        listOfBrickObjects[i] = {}
+
+        for j=1,bricksInY do
+            listOfBricks[i][j] = getPattern(i,j,pattern)
+            listOfBrickObjects[i][j] = HC.rectangle(sideOffsets+(i-1)*brickInc,topOffsets+(j-1)*brickInc,brickInc,brickInc)
+            listOfBrickObjects[i][j].isBrick = true
+            listOfBrickObjects[i][j].i = i
+            listOfBrickObjects[i][j].j = j
+            listOfBrickObjects[i][j].imageCode = listOfBricks[i][j]
+        end
+    end
+
+    gameState.gameState = 1
+    gameState.difficulty = 1
+    gameState.playerLives = 3
+    gameState.playerScore = 0
+end
+
+
+
+function loadAssets()
     --Set the window
     love.window.setFullscreen(false)
     love.window.setMode(1600,900)
@@ -75,24 +105,6 @@ function love.load()
 
     love.mouse.setVisible(false)
 
-    math.randomseed(os.time())
-    pattern = math.random(1, 4)
-
-    --Generate all the random bricks
-    for i=1,bricksInX do
-        listOfBricks[i] = {}
-        listOfBrickObjects[i] = {}
-
-        for j=1,bricksInY do
-            listOfBricks[i][j] = getPattern(i,j,pattern)
-            listOfBrickObjects[i][j] = HC.rectangle(sideOffsets+(i-1)*brickInc,topOffsets+(j-1)*brickInc,brickInc,brickInc)
-            listOfBrickObjects[i][j].isBrick = true
-            listOfBrickObjects[i][j].i = i
-            listOfBrickObjects[i][j].j = j
-            listOfBrickObjects[i][j].imageCode = listOfBricks[i][j]
-        end
-    end
-
     love.graphics.setBackgroundColor(30,30,30)
 
     -- Set up the collision mechanics
@@ -110,8 +122,9 @@ function love.load()
     arialFont = love.graphics.newFont("prototype_font/Prototype.ttf",22)
     scoreText = love.graphics.newText(arialFont,"Score :")
     scoreNumber = love.graphics.newText(arialFont,"0")
-
 end
+
+
 
 function createParticleSystem(image)
 
@@ -187,6 +200,13 @@ function love.update(dt)
         if (ball.y > screenHeight+ball.radius) then
             -- Lose a life
             gameState.gameState = 1
+            gameState.playerLives = gameState.playerLives - 1
+
+            if (gameState.playerLives == 0) then
+
+                resetBoard()
+                return
+            end
         end
         if (ball.y-ball.radius < 0) then
             if (ball.speedY < 0) then
@@ -345,6 +365,10 @@ function love.draw()
     scoreNumber:set(gameState.playerScore)
     love.graphics.draw(scoreNumber,sideBarPos+scoreText:getWidth(),60)
     love.graphics.setColor(255,255,255)
+
+    for i=1,gameState.playerLives do
+        love.graphics.draw(bat.image,sideBarPos+32,400+32*i,0,0.16,0.16)
+    end
 end
 
 
