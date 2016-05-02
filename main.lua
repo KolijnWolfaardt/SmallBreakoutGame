@@ -39,6 +39,9 @@ ball.stepsSinceBounce = 5
 
 gameState = {}
 
+listOfBricks = {}
+listOfBrickObjects = {}
+
 local text = {}
 
 function love.load()
@@ -53,8 +56,14 @@ function resetBoard()
     math.randomseed(os.time())
     pattern = math.random(1, 4)
 
-    listOfBricks = {}
-    listOfBrickObjects = {}
+    for k in pairs (listOfBricks) do
+        listOfBricks [k] = nil
+    end
+
+    for k in pairs (listOfBrickObjects) do
+        listOfBrickObjects [k] = nil
+    end
+    HC.resetHash() -- Clear all the physics objects
 
     --Generate all the random bricks
     for i=1,bricksInX do
@@ -166,8 +175,9 @@ function getPattern(x,y,number)
         if (x%3 ==0) or (y%3 == 0) then
             if (x%3 ==0) and (y%3 == 0) then
                 return 8
+            else
+                return 5
             end
-            return 5
         else 
             return 1
         end
@@ -202,7 +212,7 @@ function love.update(dt)
             gameState.gameState = 1
             gameState.playerLives = gameState.playerLives - 1
 
-            if (gameState.playerLives == 0) then
+            if (gameState.playerLives == -1) then
 
                 resetBoard()
                 return
