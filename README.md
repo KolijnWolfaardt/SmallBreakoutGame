@@ -26,7 +26,7 @@ What features have to exist for it to count as done?
   - ✓ Increment the score
   - Detect when a game is complete
   - Have a menu system to start a new game, and view (local) highscores
-  - Implement a lives system
+  - ✓ Implement a lives system
   - Have the game adjust the window size automatically
   - Be able to turn on/off music and sound effects
 

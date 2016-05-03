@@ -1,9 +1,11 @@
 
 HC = require 'hc'
+require"TEsound"
 
 brickImages= {}
 brickParticles = {}
 brickFilenames = {"tileBlack_27.png","tileBlue_27.png","tileGreen_27.png","tileGrey_27.png","tileOrange_26.png","tilePink_27.png","tileRed_27.png","tileYellow_27.png"}
+musicFilenames = {"music/music-jump.mod","music/musix-calling-for-dx.mod","music/musix-kids.mod","music/musix-pleasant.mod","music/musix-retrospective.mod","music/musix-rm.mod"}
 numberOfBrickTypes = 8
 
 batImage = nil
@@ -41,6 +43,8 @@ gameState = {}
 
 listOfBricks = {}
 listOfBrickObjects = {}
+
+muteAll = false
 
 local text = {}
 
@@ -84,6 +88,10 @@ function resetBoard()
     gameState.difficulty = 1
     gameState.playerLives = 3
     gameState.playerScore = 0
+
+    if not muteAll then
+        TEsound.playLooping(musicFilenames)
+    end
 end
 
 
@@ -185,6 +193,7 @@ function getPattern(x,y,number)
 end
 
 function love.update(dt)
+    TEsound.cleanup()
 
     bat.speedX = 0.8* (bat.x-love.mouse.getX()) + 0.2 * bat.speedX
 
